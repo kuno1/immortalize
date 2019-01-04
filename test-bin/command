@@ -1,0 +1,22 @@
+#!/bin/bash -eu
+
+# https://stackoverflow.com/questions/9256644
+trap_with_arg() {
+  func="$1" ; shift
+  for sig ; do
+    # shellcheck disable=SC2064
+    trap "$func $sig" "$sig"
+  done
+}
+
+func_trap() {
+  echo "Trapped: $1"
+  exit 0
+}
+
+trap_with_arg func_trap INT TERM EXIT
+
+for i in {1..20}; do
+  sleep 1
+  >&2 echo "$i / 20"
+done

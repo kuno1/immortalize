@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if ! which realize 2> /dev/null; then
+  >&2 echo 'realize command not found. Getting from github.com/oxequa/realize ...'
+  go get github.com/oxequa/realize
+fi
+
+exec realize start

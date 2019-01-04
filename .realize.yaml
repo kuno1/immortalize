@@ -1,0 +1,14 @@
+schema:
+- name: immortalize
+  path: .
+  commands:
+    build:
+      status: true
+  watcher:
+    extensions:
+    - go
+    paths:
+    - /
+    ignored_paths:
+    - .git
+    - .realize
