@@ -107,7 +107,7 @@ steps:
       -H "Content-Type: application/json" \
       -X POST \
       --data-binary @work/$_BIN_NAME \
-      "$_GITHUB_UPLOADS/releases/$(< work/res_id.txt)/assets?name=${_BIN_NAME}_$(< work/version.txt)"
+      "$_GITHUB_UPLOADS/releases/$(< work/res_id.txt)/assets?name=$_BIN_NAME"
 
 artifacts:
   objects:
@@ -135,4 +135,4 @@ substitutions:
   _GITHUB_API: https://api.github.com/repos/kuno1/immortalize
   _GITHUB_UPLOADS: https://uploads.github.com/repos/kuno1/immortalize
   _BIN_NAME: immortalize
-  _MAIN_BRANCH: issue/1
+  _MAIN_BRANCH: master
