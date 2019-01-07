@@ -48,7 +48,7 @@ steps:
   args:
   - -c
   - |
-    [ "$_WORKFLOW" != 'master' ] || \
+    [ "$BRANCH_NAME" != "$_MAIN_BRANCH" ] || \
     base64 -d <<< "$_ENCRYPTED_GITHUB_TOKEN" | \
     gcloud kms decrypt \
       --ciphertext-file=- \
@@ -62,7 +62,7 @@ steps:
   args:
   - -c
   - |
-    [ "$_WORKFLOW" != 'master' ] || \
+    [ "$BRANCH_NAME" != "$_MAIN_BRANCH" ] || \
     echo "$(date -u '+%Y%m%d')_$BUILD_ID" > work/version.txt
 - name: gcr.io/cloud-builders/curl
   # Generate release info
@@ -70,7 +70,7 @@ steps:
   args:
   - -c
   - |
-    [ "$_WORKFLOW" != 'master' ] || \
+    [ "$BRANCH_NAME" != "$_MAIN_BRANCH" ] || \
     echo '{"tag_name":"build-'"$(< work/version.txt)"'","target_commitish":"'"$COMMIT_SHA"'","name":"Build '"$(< work/version.txt)"'"}' > work/release.json
 - name: gcr.io/cloud-builders/curl
   # Create a release on GitHub
@@ -78,7 +78,7 @@ steps:
   args:
   - -c
   - |
-    [ "$_WORKFLOW" != 'master' ] || \
+    [ "$BRANCH_NAME" != "$_MAIN_BRANCH" ] || \
     curl --fail \
       --user "$_GITHUB_USER:$(< work/github-token.txt)" \
       -H "Content-Type: application/json" \
@@ -91,7 +91,7 @@ steps:
   args:
   - -c
   - |
-    [ "$_WORKFLOW" != 'master' ] || \
+    [ "$BRANCH_NAME" != "$_MAIN_BRANCH" ] || \
     node -e \
       'c=require("fs").readFileSync("work/res.json");console.log(JSON.parse(c).id)' \
       | tee work/res_id.txt
@@ -101,7 +101,7 @@ steps:
   args:
   - -c
   - |
-    [ "$_WORKFLOW" != 'master' ] || \
+    [ "$BRANCH_NAME" != "$_MAIN_BRANCH" ] || \
     curl --fail \
       --user "$_GITHUB_USER:$(< work/github-token.txt)" \
       -H "Content-Type: application/json" \
@@ -122,7 +122,7 @@ substitutions:
   _CACHE_BASEDIR: gopath
   _CACHE_DIR: pkg
   _GITHUB_REPO: github.com/kuno1/immortalize
-  _GITHUB_USER: dummy
+  _GITHUB_USER: kuno1bot
   # _ENCRYPTED_GITHUB_TOKEN is generated with the following commands:
   #
   # gcloud kms encrypt \
@@ -131,8 +131,8 @@ substitutions:
   #  --location=global \
   #  --keyring=cloudbuild \
   #  --key=github_bot | base64 -w 0
-  _ENCRYPTED_GITHUB_TOKEN: dummytoken
+  _ENCRYPTED_GITHUB_TOKEN: CiQAoxnLmaebfUQcsL9snYhmYCup645amyxR+woZm99hKydCT/YSUgBUqox8zCXG7ocRPRrWVBgm5XtrjbrnuydD/6vV20Wyr5OtRAPUWRASBfggpH/I7GT2ShW1ja1NX7vdaTk0qfrL2u16DAKnlblvR93G+l2GHdI=
   _GITHUB_API: https://api.github.com/repos/kuno1/immortalize
   _GITHUB_UPLOADS: https://uploads.github.com/repos/kuno1/immortalize
   _BIN_NAME: immortalize
-  _WORKFLOW: notmaster
+  _MAIN_BRANCH: master
