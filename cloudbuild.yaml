@@ -135,4 +135,4 @@ substitutions:
   _GITHUB_API: https://api.github.com/repos/kuno1/immortalize
   _GITHUB_UPLOADS: https://uploads.github.com/repos/kuno1/immortalize
   _BIN_NAME: immortalize
-  _MAIN_BRANCH: master
+  _MAIN_BRANCH: issue/1
