@@ -34,6 +34,23 @@ steps:
   - PROJECT_ROOT=$_GITHUB_REPO
   - GO111MODULE=on
 
+# Test
+- name: gcr.io/cloud-builders/npm
+  entrypoint: bash
+  args:
+  - -c
+  - |
+    mkdir -p $_CACHE_BASEDIR/$_CACHE_DIR && cd $_CACHE_BASEDIR/$_CACHE_DIR
+    if [ ! -f node_modules/.bin/bats ]; then
+      echo '{"private": true}' > package.json
+      npm install bats@$_BATS_VERSION
+    fi
+- name: gcr.io/cloud-builders/npm
+  entrypoint: bash
+  args:
+  - -c
+  - $_CACHE_BASEDIR/$_CACHE_DIR/node_modules/.bin/bats test/test.bats
+
 # Save cache
 - name: gcr.io/cloud-builders/curl
   entrypoint: bash
@@ -147,4 +164,5 @@ substitutions:
   _GITHUB_API: https://api.github.com/repos/kuno1/immortalize
   _GITHUB_UPLOADS: https://uploads.github.com/repos/kuno1/immortalize
   _BIN_NAME: immortalize
+  _BATS_VERSION: 1.1.0
   _MAIN_BRANCH: master
