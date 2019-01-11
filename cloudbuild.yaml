@@ -17,6 +17,11 @@ steps:
       gs://$_CACHE_BUCKET/$_GITHUB_REPO/tree/$BRANCH_NAME/$_CACHE_NAME.tar.gz \
       /var/tmp/$_CACHE_NAME.tar.gz && \
     tar xvzf /var/tmp/$_CACHE_NAME.tar.gz -C $_CACHE_BASEDIR) || exit 0
+- name: gcr.io/cloud-builders/curl
+  entrypoint: bash
+  args:
+  - -c
+  - mv $_CACHE_BASEDIR/$_CACHE_DIR/gopkg gopath/pkg || exit 0
 
 # Build
 - name: gcr.io/cloud-builders/go:debian
@@ -30,6 +35,13 @@ steps:
   - GO111MODULE=on
 
 # Save cache
+- name: gcr.io/cloud-builders/curl
+  entrypoint: bash
+  args:
+  - -c
+  - |
+    mkdir -p $_CACHE_BASEDIR/$_CACHE_DIR && \
+    mv gopath/pkg $_CACHE_BASEDIR/$_CACHE_DIR/gopkg
 - name: gcr.io/cloud-builders/gsutil
   entrypoint: bash
   args:
@@ -118,9 +130,9 @@ artifacts:
 substitutions:
   _CACHE_BUCKET: kunoichimarket-cloudbuild-cache
   _ARTIFACT_BUCKET: kunoichimarket-cloudbuild-artifact
-  _CACHE_NAME: gopkg
-  _CACHE_BASEDIR: gopath
-  _CACHE_DIR: pkg
+  _CACHE_NAME: cache
+  _CACHE_BASEDIR: work
+  _CACHE_DIR: cache
   _GITHUB_REPO: github.com/kuno1/immortalize
   _GITHUB_USER: kuno1bot
   # _ENCRYPTED_GITHUB_TOKEN is generated with the following commands:
