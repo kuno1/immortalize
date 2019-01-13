@@ -6,11 +6,24 @@ result () {
   awk '{split($0,a,"."); print a[1]}' < work/time
 }
 
+time_cmd=
+
 measure () {
+  if [ "$time_cmd" == '' ]; then
+    if [ -f /usr/bin/time ]; then
+      time_cmd=/usr/bin/time
+    elif [ -f work/cache/time ]; then
+      time_cmd=work/cache/time
+    else
+      >&3 echo 'Error: time command does not exist.'
+      exit 1
+    fi
+  fi
+
   # Measure immortalize and redirect stdout/stderr to file descriptor 3.
   # Details:
   # https://github.com/bats-core/bats-core#file-descriptor-3-read-this-if-bats-hangs
-  /usr/bin/time -f '%e' -o work/time ./immortalize "$@" >&3 2>&1 &
+  "$time_cmd" -f '%e' -o work/time ./immortalize "$@" >&3 2>&1 &
   # Store time's PID
   echo "$!" > work/pid
 }

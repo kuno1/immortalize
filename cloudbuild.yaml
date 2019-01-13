@@ -45,6 +45,16 @@ steps:
       echo '{"private": true}' > package.json
       npm install bats@$_BATS_VERSION
     fi
+- name: gcr.io/cloud-builders/curl
+  entrypoint: bash
+  args:
+  - -c
+  - |
+    mkdir -p $_CACHE_BASEDIR/$_CACHE_DIR
+    if [ ! -f $_CACHE_BASEDIR/$_CACHE_DIR/time ]; then
+      apt-get update && apt-get install -y time
+      cp /usr/bin/time $_CACHE_BASEDIR/$_CACHE_DIR/time
+    fi
 - name: gcr.io/cloud-builders/npm
   entrypoint: bash
   args:
