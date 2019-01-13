@@ -49,7 +49,7 @@ steps:
   entrypoint: bash
   args:
   - -c
-  - $_CACHE_BASEDIR/$_CACHE_DIR/node_modules/.bin/bats test/test.bats
+  - $_CACHE_BASEDIR/$_CACHE_DIR/node_modules/.bin/bats -t test
 
 # Save cache
 - name: gcr.io/cloud-builders/curl
