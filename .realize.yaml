@@ -4,6 +4,9 @@ schema:
   commands:
     build:
       status: true
+      args:
+        - -o
+        - work/immortalize
   watcher:
     extensions:
     - go
