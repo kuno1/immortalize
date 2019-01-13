@@ -17,6 +17,11 @@ steps:
       gs://$_CACHE_BUCKET/$_GITHUB_REPO/tree/$BRANCH_NAME/$_CACHE_NAME.tar.gz \
       /var/tmp/$_CACHE_NAME.tar.gz && \
     tar xvzf /var/tmp/$_CACHE_NAME.tar.gz -C $_CACHE_BASEDIR) || exit 0
+- name: gcr.io/cloud-builders/curl
+  entrypoint: bash
+  args:
+  - -c
+  - mv $_CACHE_BASEDIR/$_CACHE_DIR/gopkg gopath/pkg || exit 0
 
 # Build
 - name: gcr.io/cloud-builders/go:debian
@@ -29,7 +34,41 @@ steps:
   - PROJECT_ROOT=$_GITHUB_REPO
   - GO111MODULE=on
 
+# Test
+- name: gcr.io/cloud-builders/npm
+  entrypoint: bash
+  args:
+  - -c
+  - |
+    mkdir -p $_CACHE_BASEDIR/$_CACHE_DIR && cd $_CACHE_BASEDIR/$_CACHE_DIR
+    if [ ! -f node_modules/.bin/bats ]; then
+      echo '{"private": true}' > package.json
+      npm install bats@$_BATS_VERSION
+    fi
+- name: gcr.io/cloud-builders/curl
+  entrypoint: bash
+  args:
+  - -c
+  - |
+    mkdir -p $_CACHE_BASEDIR/$_CACHE_DIR
+    if [ ! -f $_CACHE_BASEDIR/$_CACHE_DIR/time ]; then
+      apt-get update && apt-get install -y time
+      cp /usr/bin/time $_CACHE_BASEDIR/$_CACHE_DIR/time
+    fi
+- name: gcr.io/cloud-builders/npm
+  entrypoint: bash
+  args:
+  - -c
+  - $_CACHE_BASEDIR/$_CACHE_DIR/node_modules/.bin/bats -t test
+
 # Save cache
+- name: gcr.io/cloud-builders/curl
+  entrypoint: bash
+  args:
+  - -c
+  - |
+    mkdir -p $_CACHE_BASEDIR/$_CACHE_DIR && \
+    mv gopath/pkg $_CACHE_BASEDIR/$_CACHE_DIR/gopkg
 - name: gcr.io/cloud-builders/gsutil
   entrypoint: bash
   args:
@@ -118,9 +157,9 @@ artifacts:
 substitutions:
   _CACHE_BUCKET: kunoichimarket-cloudbuild-cache
   _ARTIFACT_BUCKET: kunoichimarket-cloudbuild-artifact
-  _CACHE_NAME: gopkg
-  _CACHE_BASEDIR: gopath
-  _CACHE_DIR: pkg
+  _CACHE_NAME: cache
+  _CACHE_BASEDIR: work
+  _CACHE_DIR: cache
   _GITHUB_REPO: github.com/kuno1/immortalize
   _GITHUB_USER: kuno1bot
   # _ENCRYPTED_GITHUB_TOKEN is generated with the following commands:
@@ -135,4 +174,5 @@ substitutions:
   _GITHUB_API: https://api.github.com/repos/kuno1/immortalize
   _GITHUB_UPLOADS: https://uploads.github.com/repos/kuno1/immortalize
   _BIN_NAME: immortalize
+  _BATS_VERSION: 1.1.0
   _MAIN_BRANCH: master
