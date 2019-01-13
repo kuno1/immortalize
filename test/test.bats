@@ -23,7 +23,7 @@ measure () {
   # Measure immortalize and redirect stdout/stderr to file descriptor 3.
   # Details:
   # https://github.com/bats-core/bats-core#file-descriptor-3-read-this-if-bats-hangs
-  "$time_cmd" -f '%e' -o work/time ./work/immortalize "$@" >&3 2>&1 &
+  "$time_cmd" --quiet -f '%e' -o work/time ./work/immortalize "$@" >&3 2>&1 &
   # Store time's PID
   echo "$!" > work/pid
 }
@@ -33,21 +33,47 @@ sigterm () {
   pkill -P "$(< work/pid)"
 }
 
-# MIN -> COM
+wait_exit () {
+  set +e
+  wait "$(< work/pid)"
+  code="$?"
+  set -e
+  >&3 echo "Exited with exit code $code."
+  return "$code"
+}
+
+# * `COM`: Command exited
+# * `MAX`: Maximum lifetime exceeded
+# * `MIN`: Minimum lifetime exceeded
+# * `SIG`: SIGTERM received
+#
+# MIN -> COM -> MAX -> SIG
+# MIN -> COM -> SIG -> MAX
 @test "MIN -> COM" {
   measure -min-lifetime 2 -command test-bin/command-zero
-  wait
+  wait_exit
   [ "$(result)" == 4 ]
 }
 
-# COM -> MIN
-@test "COM -> MIN" {
+# COM -> MIN -> MAX -> SIG
+# COM -> MIN -> SIG -> MAX
+# COM -> SIG -> MIN -> MAX
+@test "COM" {
   measure -min-lifetime 6 -command test-bin/command-zero
-  wait
+  wait_exit
   [ "$(result)" == 4 ]
 }
 
-# SIG -> MIN
+# MIN -> MAX -> COM -> SIG
+# MIN -> MAX -> SIG -> COM
+@test "MIN -> MAX" {
+  measure -max-lifetime 2 -command test-bin/command-zero
+  wait
+  [ "$(result)" == 2 ]
+}
+
+# SIG -> MIN -> MAX -> COM
+# SIG -> MIN -> COM -> MAX
 @test "SIG -> MIN" {
   measure -min-lifetime 2 -command test-bin/command-zero
   sleep 1
@@ -56,11 +82,30 @@ sigterm () {
   [ "$(result)" == 2 ]
 }
 
-# MIN -> SIG
+# MIN -> SIG -> COM -> MAX
+# MIN -> SIG -> MAX -> COM
 @test "MIN -> SIG" {
   measure -min-lifetime 2 -command test-bin/command-zero
   sleep 3
   sigterm
   wait
   [ "$(result)" == 3 ]
+}
+
+# SIG -> COM -> MIN -> MAX
+@test "SIG -> COM" {
+  measure -min-lifetime 6 -command test-bin/command-zero
+  sleep 2
+  sigterm
+  wait
+  [ "$(result)" == 4 ]
+}
+
+# Invalid order
+@test "MAX -> MIN" {
+  measure -min-lifetime 4 -max-lifetime 2 -command test-bin/command-zero
+  if wait_exit; then
+    exit 1
+  fi
+  [ "$(result)" == 0 ]
 }
