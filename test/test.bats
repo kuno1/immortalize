@@ -23,7 +23,7 @@ measure () {
   # Measure immortalize and redirect stdout/stderr to file descriptor 3.
   # Details:
   # https://github.com/bats-core/bats-core#file-descriptor-3-read-this-if-bats-hangs
-  "$time_cmd" -f '%e' -o work/time ./immortalize "$@" >&3 2>&1 &
+  "$time_cmd" -f '%e' -o work/time ./work/immortalize "$@" >&3 2>&1 &
   # Store time's PID
   echo "$!" > work/pid
 }
