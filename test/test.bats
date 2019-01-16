@@ -42,6 +42,18 @@ wait_exit () {
   return "$code"
 }
 
+assert_exit_with_nonzero () {
+  if wait_exit; then
+    exit 1
+  fi
+}
+
+assert_exit_with_0 () {
+  if ! wait_exit; then
+    exit 1
+  fi
+}
+
 # * `COM`: Command exited
 # * `MAX`: Maximum lifetime exceeded
 # * `MIN`: Minimum lifetime exceeded
@@ -49,63 +61,103 @@ wait_exit () {
 #
 # MIN -> COM -> MAX -> SIG
 # MIN -> COM -> SIG -> MAX
-@test "MIN -> COM" {
+@test "MIN -> COM (0)" {
   measure -min-lifetime 2 -command test-bin/command-zero
-  wait_exit
+  assert_exit_with_0
+  [ "$(result)" == 4 ]
+}
+
+@test "MIN -> COM (1)" {
+  measure -min-lifetime 2 -command test-bin/command-one
+  assert_exit_with_nonzero
   [ "$(result)" == 4 ]
 }
 
 # COM -> MIN -> MAX -> SIG
 # COM -> MIN -> SIG -> MAX
 # COM -> SIG -> MIN -> MAX
-@test "COM" {
+@test "COM (0)" {
   measure -min-lifetime 6 -command test-bin/command-zero
-  wait_exit
+  assert_exit_with_0
+  [ "$(result)" == 4 ]
+}
+
+@test "COM (1)" {
+  measure -min-lifetime 6 -command test-bin/command-one
+  assert_exit_with_nonzero
   [ "$(result)" == 4 ]
 }
 
 # MIN -> MAX -> COM -> SIG
 # MIN -> MAX -> SIG -> COM
-@test "MIN -> MAX" {
+@test "MIN -> MAX (0)" {
   measure -max-lifetime 2 -command test-bin/command-zero
-  wait
+  assert_exit_with_0
+  [ "$(result)" == 2 ]
+}
+
+@test "MIN -> MAX (1)" {
+  measure -max-lifetime 2 -command test-bin/command-one
+  assert_exit_with_nonzero
   [ "$(result)" == 2 ]
 }
 
 # SIG -> MIN -> MAX -> COM
 # SIG -> MIN -> COM -> MAX
-@test "SIG -> MIN" {
+@test "SIG -> MIN (0)" {
   measure -min-lifetime 2 -command test-bin/command-zero
   sleep 1
   sigterm
-  wait
+  assert_exit_with_0
+  [ "$(result)" == 2 ]
+}
+
+@test "SIG -> MIN (1)" {
+  measure -min-lifetime 2 -command test-bin/command-one
+  sleep 1
+  sigterm
+  assert_exit_with_nonzero
   [ "$(result)" == 2 ]
 }
 
 # MIN -> SIG -> COM -> MAX
 # MIN -> SIG -> MAX -> COM
-@test "MIN -> SIG" {
+@test "MIN -> SIG (0)" {
   measure -min-lifetime 2 -command test-bin/command-zero
   sleep 3
   sigterm
-  wait
+  assert_exit_with_0
+  [ "$(result)" == 3 ]
+}
+
+@test "MIN -> SIG (1)" {
+  measure -min-lifetime 2 -command test-bin/command-one
+  sleep 3
+  sigterm
+  assert_exit_with_nonzero
   [ "$(result)" == 3 ]
 }
 
 # SIG -> COM -> MIN -> MAX
-@test "SIG -> COM" {
+@test "SIG -> COM (0)" {
   measure -min-lifetime 6 -command test-bin/command-zero
   sleep 2
   sigterm
-  wait
+  assert_exit_with_0
+  [ "$(result)" == 4 ]
+}
+
+@test "SIG -> COM (1)" {
+  measure -min-lifetime 6 -command test-bin/command-one
+  sleep 2
+  sigterm
+  assert_exit_with_nonzero
   [ "$(result)" == 4 ]
 }
 
 # Invalid order
 @test "MAX -> MIN" {
   measure -min-lifetime 4 -max-lifetime 2 -command test-bin/command-zero
-  if wait_exit; then
-    exit 1
-  fi
+  assert_exit_with_nonzero
   [ "$(result)" == 0 ]
 }

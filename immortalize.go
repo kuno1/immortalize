@@ -13,7 +13,7 @@ import (
 
 var log = logrus.New()
 
-func run(minLifetime uint, maxLifetime uint, command string) {
+func run(minLifetime uint, maxLifetime uint, command string) int {
 	cmd := exec.Command(command)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
@@ -57,7 +57,20 @@ func run(minLifetime uint, maxLifetime uint, command string) {
 		}
 	}()
 
-	cmd.Wait()
+	var status int
+	if err := cmd.Wait(); err != nil {
+		if e2, ok := err.(*exec.ExitError); ok {
+			if s, ok := e2.Sys().(syscall.WaitStatus); ok {
+				status = s.ExitStatus()
+			} else {
+				log.Fatal("Failed to execute command")
+			}
+		}
+	} else {
+		status = 0
+	}
+
+	return status
 }
 
 func configLog(level string) error {
@@ -97,5 +110,5 @@ func main() {
 		log.Fatal("min-lifetime cannot be higher than max-lifetime.")
 	}
 
-	run(*minLifetimePtr, *maxLifetimePtr, *commandPtr)
+	os.Exit(run(*minLifetimePtr, *maxLifetimePtr, *commandPtr))
 }
