@@ -73,7 +73,7 @@ func run(minLifetime uint, maxLifetime uint, command string) int {
 	return status
 }
 
-func configLog(level string) error {
+func configLog(level string, logPath string) error {
 	var l logrus.Level
 	switch level {
 	case "trace":
@@ -81,14 +81,24 @@ func configLog(level string) error {
 	case "debug":
 		l = logrus.DebugLevel
 	case "info":
-		l = logrus.DebugLevel
+		l = logrus.InfoLevel
 	default:
 		return errors.New("log level must be one of 'info', 'debug', or 'trace'")
 	}
 
 	log.SetFormatter(&logrus.JSONFormatter{})
 	log.SetLevel(l)
-	log.Out = os.Stderr
+
+	if logPath == "" {
+		log.Out = os.Stderr
+		return nil
+	}
+
+	f, err := os.Create(logPath)
+	if err != nil {
+		return err
+	}
+	log.Out = f
 	return nil
 }
 
@@ -100,9 +110,13 @@ func main() {
 	commandPtr := flag.String("command", "command", "command to immortalize")
 	levelPtr := flag.String(
 		"log-level", "info", "Log level: 'info', 'debug', or 'trace'")
+	logPathPtr := flag.String(
+		"log-path", "", "Log path: default to stderr")
 	flag.Parse()
 
-	configLog(*levelPtr)
+	if err := configLog(*levelPtr, *logPathPtr); err != nil {
+		panic(err)
+	}
 
 	log.Debugf("PID: %v", os.Getpid())
 

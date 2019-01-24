@@ -161,3 +161,39 @@ assert_exit_with_0 () {
   assert_exit_with_nonzero
   [ "$(result)" == 0 ]
 }
+
+@test "Log path" {
+  log=work/immortalize.log
+  rm -f "$log"
+  ./work/immortalize \
+    -max-lifetime 2 \
+    -command test-bin/command-zero \
+    -log-path "$log" >&3 2>&1
+
+  [ 1 -lt "$(wc -l < "$log")" ]
+}
+
+@test "log level - default (info)" {
+  log=work/immortalize.log
+  rm -f "$log"
+  ./work/immortalize \
+    -max-lifetime 2 \
+    -command test-bin/command-zero \
+    -log-path "$log" >&3 2>&1
+
+  [ 1 -lt "$(grep info < "$log" | wc -l)" ]
+  [ 0 -eq "$(grep debug < "$log" | wc -l)" ]
+}
+
+@test "log level - debug" {
+  log=work/immortalize.log
+  rm -f "$log"
+  ./work/immortalize \
+    -max-lifetime 2 \
+    -command test-bin/command-zero \
+    -log-path "$log" \
+    -log-level debug >&3 2>&1
+
+  [ 1 -lt "$(grep info < "$log" | wc -l)" ]
+  [ 0 -lt "$(grep debug < "$log" | wc -l)" ]
+}
